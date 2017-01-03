@@ -12,15 +12,19 @@ app.use(bodyParser.urlencoded({
 app.use(bodyParser.json())
 
 app.get('/api/product', (req, res) => {
-	res.send(200, { products: [] })
+	Product.find({}, (err, product) => {
+		if (err) return res.status(500).send({ message: `Error al realizar la pentición: ${err}` })
+		if (!product) return res.status(404).send({ message: `no existen productos` })
+		res.send(200, { product })
+	})
 })
 app.get('/api/product/:productId', (req, res) => {
 	let productId = req.params.productId
-	Product.findById(productId,(err, product)=>{
-		if(err) return res.status(500).send({ message: `Error al realizar la pentición: ${err}` })
-		if(!product) return res.status(404).send({message: `El producto noe existe`})
+	Product.findById(productId, (err, product) => {
+		if (err) return res.status(500).send({ message: `Error al realizar la pentición: ${err}` })
+		if (!product) return res.status(404).send({ message: `El producto noe existe` })
 
-		res.status(200).send({product})
+		res.status(200).send({ product })
 	})
 })
 
@@ -40,9 +44,27 @@ app.post('/api/product', (req, res) => {
 	})
 })
 
-app.put('/api/product/:productId', (req, res) => { })
+app.put('/api/product/:productId', (req, res) => { 
+	let productId = req.params.productId
+	let update = req.body
 
-app.delete('/api/product/:productdId', (req, res) => { })
+	Product.findByIdAndUpdate(productId,update,(err,productUpdated)=>{
+		if (err) res.status(500).send({message:`error al actualizar el servidor: ${err}`})
+		res.status(200).send({product: productUpdated})
+	})
+})
+
+app.delete('/api/product/:productId', (req, res) => {
+	let productId = req.params.productId
+	Product.findById(productId, (err, product) => {
+		if (err) res.status(500).send({ message: `Error al borrar producto: ${err}` })
+
+		product.remove(err => {
+			if (err) res.status(500).send({ message: `Error al borrar peticion: ${err}` })
+			res.status(200).send({ message: 'elproducto asido eliminado' })
+		})
+	})
+})
 
 
 mongoose.connect('mongodb://localhost:27017/shop', (err, res) => {
